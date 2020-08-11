@@ -1,5 +1,5 @@
 import pyautogui as pygui 
-import pydirectinput as pydirect 
+import pydirect_test as pydirect 
 import win32api, time, cv2, time
 
 
@@ -27,10 +27,8 @@ keyboard_keys=['a', 'b', 'c', 'd', 'e','f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', '
 
 def get_click_positions(button, clicks):
     button_vk={
-        "left_button":0x01,
-        "right_button":0x02,
-        "middle_button":0x04
-
+        "left_click":0x01,
+        "right_click":0x02
     }
     click_reference=win32api.GetKeyState(button_vk[button])
     positions_list=[]
@@ -42,7 +40,7 @@ def get_click_positions(button, clicks):
             if click_status<0 : # GetKeyState returns a negative value if the key is pressed
                 x_, y_ = pygui.position()
 
-                positions_list.append({"x":x_,"y":y_})
+                positions_list.append([x_,y_])
                 i=i+1
                 if i==clicks:
                     break
@@ -54,30 +52,44 @@ def get_click_positions(button, clicks):
 
 
 
-def execute_macro(instructions):
-    for instruction in instructions:
-
-        if "key_down" in instruction:
-            pydirect.keyDown(instruction["key_down"])
+def execute_macro(instructions, ms_delay):
+  
+    for key, value in instructions:
+        
+        time.sleep(ms_delay)
+        if key=="key_down":
+            pydirect.keyDown(value)
             continue
 
-        if "key_up" in instruction:
-            pydirect.keyUp(instruction["key_up"])
+        if key=="key_up" in instruction:
+            pydirect.keyUp(value)
             continue
 
-        if "click" in instruction:
-            pydirect.click(instruction["click"][0],instruction["click"][1])
+        if "click" in key:
+            #process string into list, example: click:[[662, 625]]+ click:[[687, 662]] ---> [(662,625), (687,662)]
+            click_list= [(int(x),int(y)) for x,y in  [part.replace("[", '').replace("]", '').split(',') for part in value.split('],') ]] 
+            
+            if "left" in key:
+                for x, y in click_list:
+                    pydirect.click(x,y)
+                    time.sleep(ms_delay)
+
+            elif "right" in key:
+                for x, y in click_list:
+                    pydirect.rightClick(x,y)
+                    time.sleep(ms_delay)  
             continue
 
-        if "press" in instruction:
-            pydirect.press(instruction["press"])
+        if key=="press":
+            pydirect.press(value)
             continue
 
 
-        if "wait" in instruction:
-            time.sleep(instruction["wait"])
+        if key=="wait":
+            time.sleep(int(value))
             continue
 
+    
 
 
 
